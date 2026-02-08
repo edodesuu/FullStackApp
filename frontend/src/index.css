@@ -1,0 +1,21 @@
+@import "tailwindcss";
+
+@theme {
+  /* Цвета из макета Figma */
+  --color-bg-dark: #1F2128;       /* Основной темный фон */
+  --color-bg-card: #2A2D36;       /* Фон карточек */
+  --color-accent-yellow: #F4CE14; /* Кнопки (Get started) */
+  --color-accent-purple: #BFAFF2; /* Тестимониал и кнопки логина */
+  --color-accent-cream: #F8F1D8;  /* Секция с дэшбордом */
+  --color-text-main: #FFFFFF;
+  --color-text-muted: #9CA3AF;
+  
+  /* Шрифты (подключи Inter в index.html или через Google Fonts) */
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+}
+
+body {
+  background-color: var(--color-bg-dark);
+  color: var(--color-text-main);
+  overflow-x: hidden; /* Чтобы не было горизонтального скролла */
+}
