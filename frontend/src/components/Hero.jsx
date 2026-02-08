@@ -36,7 +36,7 @@ const Hero = () => {
       {/* mt-40 отодвигает блок далеко вниз */}
       <div className="w-full border-y border-white/10 py-16 mt-40 mb-10">
         <div className="flex flex-wrap justify-between items-center gap-8 opacity-50 grayscale hover:grayscale-0 transition-all duration-500 px-4 md:px-10">
-            <img src="public/assets/img/Logos.png" alt="" />
+            <img src="src/assets/Logos.png" alt="" />
         </div>
       </div>
 

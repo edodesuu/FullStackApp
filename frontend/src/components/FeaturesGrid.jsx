@@ -37,7 +37,7 @@ const FeaturesGrid = () => {
         <div className="flex items-center justify-center gap-5">
             {/* Аватарка картинкой */}
             <img 
-                src="public/assets/img/author.png" 
+                src="src/assets/author.png" 
                 alt="Johnny Owens" 
                 className="w-14 h-14 rounded-full object-cover shadow-sm"
             />

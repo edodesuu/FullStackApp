@@ -9,7 +9,7 @@ const FeaturesDashboard = () => {
                 Вставь свой файл 'img.png' в папку: frontend/public/assets/img/ 
             */}
             <img 
-                src="/assets/img/img.png" 
+                src="src/assets/img.png" 
                 alt="Application Preview" 
                 className="w-full h-auto object-cover"
             />

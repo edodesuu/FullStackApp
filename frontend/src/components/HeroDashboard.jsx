@@ -3,7 +3,7 @@ import axios from 'axios';
 import { 
   PieChart, Pie, Cell, 
   LineChart, Line, XAxis, Tooltip, ResponsiveContainer,
-  AreaChart, Area, CartesianGrid, YAxis
+  AreaChart, Area, CartesianGrid
 } from 'recharts';
 
 const HeroDashboard = () => {
@@ -13,18 +13,7 @@ const HeroDashboard = () => {
   useEffect(() => {
     axios.get('http://127.0.0.1:8000/api/stats/')
       .then(res => {
-        // Чтобы круг выглядел как на макете (4 цвета), 
-        // мы искусственно разобьем "used" на 3 части + остаток
-        const used = res.data.monthly_plan.used;
-        const part = used / 3;
-        const fakeData = [
-            { name: 'A', value: part },
-            { name: 'B', value: part },
-            { name: 'C', value: part },
-            { name: 'Left', value: 100 - used }
-        ];
-        
-        setStats({ ...res.data, pieData: fakeData });
+        setStats(res.data);
         setLoading(false);
       })
       .catch(err => {
@@ -33,14 +22,20 @@ const HeroDashboard = () => {
       });
   }, []);
 
-  // Цвета точно как на макете
-  const COLORS = ['#4ADE80', '#3B82F6', '#EF4444', '#F4CE14']; // Green, Blue, Red, Yellow
+  // Цвета для Customer Rate (строго в порядке данных с бэка: 5 звезд, 4, 3, 2)
+  // 5 Stars -> Green, 4 -> Blue, 3 -> Yellow, 2 -> Red
+  const PIE_COLORS = ['#4ADE80', '#3B82F6', '#F4CE14', '#EF4444']; 
 
-  const CustomTooltip = ({ active, payload }) => {
+  // Тултип без слова "Value"
+  const CustomTooltip = ({ active, payload, label, prefix = "", suffix = "" }) => {
     if (active && payload && payload.length) {
       return (
-        <div className="bg-[#1F2128] border border-white/10 p-2 rounded shadow-xl text-xs">
-          <p className="text-white">{payload[0].value}</p>
+        <div className="bg-[#1F2128] border border-white/10 p-2 rounded shadow-xl text-xs z-50">
+          <p className="text-white font-bold">
+            {prefix}{payload[0].value.toLocaleString()}{suffix}
+          </p>
+          {/* Если есть label (например дата), покажем его мелко */}
+          {label && <p className="text-gray-400 mt-1">{label}</p>}
         </div>
       );
     }
@@ -52,96 +47,117 @@ const HeroDashboard = () => {
   return (
     <div className="w-full h-full grid grid-cols-1 md:grid-cols-2 gap-4 font-sans">
       
-      {/* 1. Monthly Plan (Разноцветный бублик) */}
+      {/* 1. Customer Rate (Pie Chart) */}
       <div className="bg-[#2A2D36] p-5 rounded-2xl relative flex flex-col justify-between min-h-[180px]">
         <div>
-            <h4 className="text-sm font-medium text-white border-b border-yellow-500/50 inline-block pb-1">Monthly plan</h4>
+            <h4 className="text-sm font-medium text-white border-b border-yellow-500/50 inline-block pb-1">Customer Rate</h4>
         </div>
         
-        <div className="w-full h-32 relative">
+        <div className="w-full h-32 relative mt-2">
             <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                     <Pie
-                        data={stats.pieData}
-                        innerRadius={45} // Тоньше
-                        outerRadius={55}
-                        paddingAngle={0}
+                        data={stats.customer_rate}
+                        innerRadius={45}
+                        outerRadius={58}
+                        paddingAngle={2}
                         dataKey="value"
                         stroke="none"
-                        startAngle={90}
-                        endAngle={-270}
                     >
-                        {stats.pieData.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        {stats.customer_rate.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
                         ))}
                     </Pie>
                     <Tooltip content={<CustomTooltip />} />
                 </PieChart>
             </ResponsiveContainer>
-            {/* Числа вокруг (имитация макета) */}
+            
+            {/* Текст внутри бублика (Сумма или среднее, но можно просто декоративный процент) */}
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                 <div className="text-xs text-blue-400 absolute top-2 right-8">300</div>
-                 <div className="text-xs text-green-400 absolute top-8 left-6">200</div>
-                 <div className="text-xs text-red-400 absolute bottom-2 left-10">300</div>
-                 <div className="text-xs text-yellow-500 absolute bottom-6 right-6">200</div>
+                 <span className="text-white font-bold text-xl">4.8</span>
+            </div>
+            
+            {/* Динамические цифры по углам (берем из stats) */}
+            <div className="absolute inset-0 pointer-events-none text-[10px] font-bold opacity-80">
+                 {/* 5 звезд (Зеленый) */}
+                 <div className="text-green-400 absolute top-0 right-4">{stats.customer_rate[0].value}</div>
+                 {/* 4 звезды (Синий) */}
+                 <div className="text-blue-400 absolute bottom-4 right-0">{stats.customer_rate[1].value}</div>
+                 {/* 3 звезды (Желтый) */}
+                 <div className="text-yellow-400 absolute bottom-0 left-4">{stats.customer_rate[2].value}</div>
+                 {/* 2 звезды (Красный) */}
+                 <div className="text-red-400 absolute top-4 left-0">{stats.customer_rate[3].value}</div>
             </div>
         </div>
       </div>
 
-      {/* 2. Spending Frequency (Плавная линия) */}
+      {/* 2. Usage Statistics (Line Chart) */}
       <div className="bg-[#2A2D36] p-5 rounded-2xl min-h-[180px] flex flex-col">
-        <h4 className="text-sm font-medium text-white border-b border-yellow-500/50 inline-block pb-1 mb-4 w-max">Spending frequency</h4>
+        <h4 className="text-sm font-medium text-white border-b border-yellow-500/50 inline-block pb-1 mb-4 w-max">Usage Statistics</h4>
         <div className="flex-1 w-full h-full">
             <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={stats.spending_frequency}>
+                <LineChart data={stats.usage_statistics}>
+                    <Tooltip 
+                        cursor={{stroke: 'white', strokeWidth: 1, strokeDasharray: '4 4'}} 
+                        content={<CustomTooltip />} 
+                    />
                     <Line 
-                        type="monotone" 
+                        type="monotone" // Максимальная плавность
                         dataKey="value" 
                         stroke="#F4CE14" 
-                        strokeWidth={2} 
-                        dot={false} // Убираем точки для "дорогого" вида
+                        strokeWidth={3} 
+                        dot={{r: 3, fill: '#F4CE14', strokeWidth: 0}} // Маленькие аккуратные точки
+                        activeDot={{r: 6, stroke: '#fff', strokeWidth: 2}}
                     />
                     <XAxis 
                         dataKey="name" 
                         axisLine={false} 
                         tickLine={false} 
-                        tick={{fontSize: 10, fill: '#6B7280'}} 
-                        interval={1}
+                        tick={{fontSize: 9, fill: '#6B7280'}} 
+                        interval={0}
+                        dy={5}
                     />
                 </LineChart>
             </ResponsiveContainer>
         </div>
       </div>
 
-      {/* 3. Weekly Plan (Area Chart с сеткой) */}
+      {/* 3. Weekly Plan (Area Chart - Сбор средств) */}
       <div className="md:col-span-2 bg-[#2A2D36] p-5 rounded-2xl min-h-[220px] flex flex-col">
-        <h4 className="text-sm font-medium text-white border-b border-yellow-500/50 inline-block pb-1 mb-4 w-max">Weekly plan</h4>
+        <div className="flex justify-between items-end mb-4 border-b border-gray-700 pb-2">
+            <h4 className="text-sm font-medium text-white border-b border-yellow-500/50 inline-block pb-1">Weekly plan</h4>
+            {/* Показываем последнюю (текущую) сумму */}
+            <span className="text-green-400 font-bold text-lg">
+                ${stats.weekly_plan[stats.weekly_plan.length - 1].value.toLocaleString()}
+            </span>
+        </div>
+        
         <div className="w-full h-40">
             <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={stats.weekly_plan}>
                     <defs>
-                        <linearGradient id="colorVal" x1="0" y1="0" x2="0" y2="1">
+                        <linearGradient id="colorMoney" x1="0" y1="0" x2="0" y2="1">
                             <stop offset="5%" stopColor="#F4CE14" stopOpacity={0.4}/>
                             <stop offset="95%" stopColor="#F4CE14" stopOpacity={0}/>
                         </linearGradient>
                     </defs>
-                    {/* Сетка - делает график "техничным" */}
-                    <CartesianGrid stroke="#444" vertical={true} horizontal={true} strokeOpacity={0.3} />
+                    <CartesianGrid stroke="#444" vertical={false} strokeOpacity={0.3} strokeDasharray="3 3" />
                     
                     <XAxis 
                         dataKey="name" 
                         axisLine={false} 
                         tickLine={false} 
-                        tick={{fontSize: 10, fill: '#6B7280', dy: 10}} 
+                        tick={{fontSize: 10, fill: '#9CA3AF', dy: 10}} 
                     />
-                    <Tooltip content={<CustomTooltip />} />
+                    <Tooltip content={<CustomTooltip prefix="$" />} />
+                    
                     <Area 
                         type="monotone" 
                         dataKey="value" 
                         stroke="#F4CE14" 
-                        strokeWidth={2}
+                        strokeWidth={3}
                         fillOpacity={1} 
-                        fill="url(#colorVal)" 
+                        fill="url(#colorMoney)" 
                     />
                 </AreaChart>
             </ResponsiveContainer>

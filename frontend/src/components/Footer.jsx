@@ -37,7 +37,7 @@ const Footer = () => {
 
          <div className="w-full md:w-1/2 flex justify-center md:justify-end">
              <img 
-                src="/assets/img/payment.png" 
+                src="src/assets/payment.png" 
                 alt="Payment Preview" 
                 className="w-full max-w-[500px] h-auto object-contain transform hover:scale-105 transition duration-500"
              />
