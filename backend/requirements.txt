@@ -1,3 +1,13 @@
-Django==6.0.2
-djangorestframework==3.16.1
-django-cors-headers==4.9.0
+# Django (LTS версия)
+Django>=5.0,<5.2
+
+psycopg2-binary>=2.9.9
+
+djangorestframework>=3.14.0
+django-cors-headers>=4.3.0
+
+django-allauth==0.60.0
+dj-rest-auth[with_social]>=5.0.0
+djangorestframework-simplejwt>=5.3.0
+
+cryptography>=41.0.0
