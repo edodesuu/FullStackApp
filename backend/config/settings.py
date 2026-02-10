@@ -1,3 +1,4 @@
+# fcrqsrohxcudixsa
 """
 Django settings for config project.
 """
@@ -56,7 +57,8 @@ ROOT_URLCONF = 'config.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        # Важно: Указываем путь к папке templates для кастомных писем
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -94,7 +96,6 @@ REST_AUTH = {
     'USE_JWT': True,
     'JWT_AUTH_COOKIE': 'wallet-auth',
     'JWT_AUTH_REFRESH_COOKIE': 'wallet-refresh-token',
-    # Подключаем наш фикс для регистрации
     'REGISTER_SERIALIZER': 'landing.serializers.CustomRegisterSerializer',
 }
 
@@ -103,13 +104,33 @@ SIMPLE_JWT = {
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
 }
 
-# --- ALLAUTH CONFIGURATION (Classic Mode) ---
-ACCOUNT_ADAPTER = 'allauth.account.adapter.DefaultAccountAdapter'
-ACCOUNT_EMAIL_VERIFICATION = 'none'
+# --- EMAIL SETTINGS (GMAIL SMTP) ---
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'edodesuu@gmail.com'
+EMAIL_HOST_PASSWORD = 'fcrqsrohxcudixsa' 
+DEFAULT_FROM_EMAIL = 'Wallet App <edodesuu@gmail.com>'
+
+# --- ALLAUTH CONFIGURATION ---
+# Подключаем наш адаптер для очистки "зомби-юзеров"
+ACCOUNT_ADAPTER = 'landing.adapters.CustomAccountAdapter'
+
+# Обязательная верификация (включает отправку писем)
+ACCOUNT_EMAIL_VERIFICATION = 'mandatory' 
+ACCOUNT_CONFIRM_EMAIL_ON_GET = True
+
 ACCOUNT_AUTHENTICATION_METHOD = 'username_email'
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_USERNAME_REQUIRED = True
-ACCOUNT_SIGNUP_PASSWORD_ENTER_TWICE = False # Ждем только один пароль
+ACCOUNT_SIGNUP_PASSWORD_ENTER_TWICE = False
+
+# --- AUTHENTICATION BACKENDS ---
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+    'allauth.account.auth_backends.AuthenticationBackend',
+]
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",

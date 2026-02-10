@@ -1,127 +1,156 @@
-import React, { useState, useEffect } from 'react'; // Добавил useEffect на всякий случай
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { useNavigate, useLocation } from 'react-router-dom'; // Добавил useLocation
+import { useNavigate, useLocation } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { 
-  faGoogle, 
-  faMicrosoft, 
-  faFacebookF, 
-  faVk, 
-  faTelegram 
-} from '@fortawesome/free-brands-svg-icons';
+import { faGoogle, faMicrosoft, faFacebookF } from '@fortawesome/free-brands-svg-icons';
 
 const Auth = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Инициализируем состояние в зависимости от того, что пришло из Navbar
-  // Если location.state.mode === 'login', то true (Вход). Иначе false (Регистрация).
-  const [isLogin, setIsLogin] = useState(location.state?.mode === 'login');
-  
+  const [mode, setMode] = useState('login'); 
   const [formData, setFormData] = useState({ email: '', username: '', password: '' });
+  const [verifyKey, setVerifyKey] = useState('');
   const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState(null);
+  const [resendTimer, setResendTimer] = useState(0);
 
-  // Дополнительно: Если пользователь нажимает кнопки в навбаре, уже находясь на странице /login,
-  // нам нужно обновлять состояние (React не пересоздает компонент, если маршрут тот же).
+  // Таймер обратного отсчета для повторной отправки
+  useEffect(() => {
+    let interval;
+    if (resendTimer > 0) {
+      interval = setInterval(() => setResendTimer((prev) => prev - 1), 1000);
+    }
+    return () => clearInterval(interval);
+  }, [resendTimer]);
+
+  // Считывание режима (Login/Signup) из навигации
   useEffect(() => {
     if (location.state?.mode) {
-        setIsLogin(location.state.mode === 'login');
-        setError(null); // Сбрасываем ошибки при переключении
-        setFormData({ email: '', username: '', password: '' }); // Очищаем форму
+        setMode(location.state.mode);
+        setError(null);
+        setFormData({ email: '', username: '', password: '' });
     }
   }, [location.state]);
-
-
-  const toggleMode = (mode) => {
-    setIsLogin(mode === 'login');
-    setError(null);
-    setFormData({ email: '', username: '', password: '' });
-  };
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
     setError(null);
   };
 
+  // --- Логика повторной отправки письма ---
+  const handleResend = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+        await axios.post('http://127.0.0.1:8000/api/auth/registration/resend-email/', {
+            email: formData.email
+        });
+        setMessage('Email sent! Check your inbox.');
+        setResendTimer(60); 
+    } catch (err) {
+        console.error("Resend error:", err);
+        setError("Failed to resend. Please wait.");
+    } finally {
+        setLoading(false);
+    }
+  };
+
+  // --- Главная функция отправки форм ---
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
-    
-    const authUrl = isLogin 
-        ? 'http://127.0.0.1:8000/api/auth/login/' 
-        : 'http://127.0.0.1:8000/api/auth/registration/';
+    setMessage(null);
+    setLoading(true);
 
     try {
-        let payload = {};
-
-        if (isLogin) {
-            if (formData.email.includes('@')) {
-                payload = {
-                    email: formData.email,
-                    password: formData.password,
-                };
-            } else {
-                payload = {
-                    username: formData.email,
-                    password: formData.password,
-                };
-            }
-        } else {
-            payload = { 
+        // 1. ЛОГИКА ВХОДА (LOGIN)
+        if (mode === 'login') {
+            // ВАЖНО: Мы отправляем email или никнейм в поле 'username'.
+            // Django (благодаря AUTHENTICATION_BACKENDS) сам проверит и то, и другое.
+            const payload = { 
+                username: formData.email, 
+                password: formData.password 
+            };
+            
+            const res = await axios.post('http://127.0.0.1:8000/api/auth/login/', payload);
+            handleAuthSuccess(res.data);
+        } 
+        
+        // 2. ЛОГИКА РЕГИСТРАЦИИ (SIGNUP)
+        else if (mode === 'signup') {
+            const payload = { 
                 username: formData.username, 
                 email: formData.email, 
                 password: formData.password 
             };
-        }
-
-        const res = await axios.post(authUrl, payload);
+            await axios.post('http://127.0.0.1:8000/api/auth/registration/', payload);
+            // Если успех (201), переходим к верификации
+            setMode('verify'); 
+        } 
         
-        const token = res.data.key || res.data.access_token || res.data.access;
-        if(token) {
-            localStorage.setItem('token', token);
-            navigate('/');
+        // 3. ЛОГИКА ВЕРИФИКАЦИИ КОДА
+        else if (mode === 'verify') {
+            // А. Отправляем код подтверждения
+            await axios.post('http://127.0.0.1:8000/api/auth/registration/verify-email/', { key: verifyKey });
+            
+            setMessage("Email Verified! Logging you in...");
+            
+            // Б. Автоматический вход после паузы (чтобы БД успела обновиться)
+            setTimeout(async () => {
+                try {
+                    const loginPayload = { 
+                        username: formData.email, 
+                        password: formData.password 
+                    };
+                    const loginRes = await axios.post('http://127.0.0.1:8000/api/auth/login/', loginPayload);
+                    handleAuthSuccess(loginRes.data);
+                } catch (loginErr) {
+                    // Если авто-вход не сработал, просим войти вручную
+                    setMode('login');
+                    setMessage("Verified! Please enter your password to log in.");
+                    setLoading(false);
+                }
+            }, 1000); // 1 секунда задержки
+            return; // Прерываем, чтобы finally не сработал раньше времени
         }
 
     } catch (err) {
         console.error("Auth Error:", err.response);
-
         if (err.response && err.response.data) {
             const data = err.response.data;
-
-            if (data.non_field_errors) {
-                setError("Incorrect username or password.");
-            } else {
-                if (data.username) setError(`Username: ${data.username[0]}`);
-                else if (data.email) setError(`Email: ${data.email[0]}`);
-                else if (data.password) setError(`Password: ${data.password[0]}`);
-                else if (data.password1) setError(`Password: ${data.password1[0]}`);
-                else if (data.password2) setError(`Password: ${data.password2[0]}`);
-                else {
-                    const firstKey = Object.keys(data)[0];
-                    const firstVal = data[firstKey];
-                    setError(`${firstKey}: ${Array.isArray(firstVal) ? firstVal[0] : firstVal}`);
-                }
+            if (data.non_field_errors) setError("Incorrect credentials or invalid code.");
+            else if (data.key) setError("Invalid code provided."); 
+            else if (data.email) setError(`Email: ${data.email[0]}`);
+            else if (data.password) setError(`Password: ${data.password[0]}`);
+            else {
+                const firstVal = Object.values(data)[0];
+                setError(Array.isArray(firstVal) ? firstVal[0] : "Something went wrong");
             }
         } else {
-            setError("Server error. Please check your connection.");
+            setError("Server connection error.");
         }
+    } finally {
+        if (mode !== 'verify') setLoading(false);
     }
   };
 
-  const SocialButton = ({ text, icon, halfWidth = false }) => (
-    <button 
-        type="button"
-        className={`
-            ${halfWidth ? 'w-full' : 'w-full'} 
-            py-3 rounded-xl font-bold text-bg-dark 
-            bg-[#F4CE14] hover:bg-[#E5C00E] 
-            mb-3 transition shadow-md flex items-center justify-center gap-3
-        `}
-    >
+  const handleAuthSuccess = (data) => {
+    const token = data.key || data.access_token || data.access;
+    if(token) {
+        localStorage.setItem('token', token);
+        // Пытаемся достать username из ответа, иначе берем из поля ввода
+        const userDisplay = data.user?.username || formData.username || formData.email;
+        localStorage.setItem('username', userDisplay);
+        navigate('/');
+    }
+  };
+
+  const SocialButton = ({ text, icon }) => (
+    <button type="button" className="w-full py-3 rounded-xl font-bold text-bg-dark bg-[#F4CE14] hover:bg-[#E5C00E] mb-3 transition shadow-md flex items-center justify-center gap-3">
        <FontAwesomeIcon icon={icon} className="text-xl text-black" />
-       <span className="text-sm md:text-base font-bold text-black whitespace-nowrap">
-          {halfWidth ? text : `Continue with ${text}`}
-       </span>
+       <span className="text-sm md:text-base font-bold text-black">{`Continue with ${text}`}</span>
     </button>
   );
 
@@ -129,101 +158,72 @@ const Auth = () => {
     <div className="min-h-screen bg-[#1F2128] flex items-center justify-center p-4 font-sans text-white">
       <div className="w-full max-w-md bg-[#2A2D36] p-8 rounded-[30px] shadow-2xl border border-white/5">
         
-        {/* --- ПЕРЕКЛЮЧАТЕЛЬ РЕЖИМОВ --- */}
-        <div className="flex bg-[#1F2128] p-1 rounded-xl mb-8">
-            <button
-                type="button"
-                onClick={() => toggleMode('signup')}
-                className={`flex-1 py-3 rounded-xl font-bold text-sm transition-all duration-300 ${
-                    !isLogin 
-                        ? 'bg-[#F4CE14] text-[#2A2D36] shadow-md' 
-                        : 'text-gray-400 hover:text-white'
-                }`}
-            >
-                Sign Up
-            </button>
-            <button
-                type="button"
-                onClick={() => toggleMode('login')}
-                className={`flex-1 py-3 rounded-xl font-bold text-sm transition-all duration-300 ${
-                    isLogin 
-                        ? 'bg-[#F4CE14] text-[#2A2D36] shadow-md' 
-                        : 'text-gray-400 hover:text-white'
-                }`}
-            >
-                Log In
-            </button>
-        </div>
+        {/* Переключатель Login / Signup (скрыт при верификации) */}
+        {mode !== 'verify' && (
+            <div className="flex bg-[#1F2128] p-1 rounded-xl mb-8">
+                <button onClick={() => { setMode('signup'); setError(null); }} className={`flex-1 py-3 rounded-xl font-bold text-sm transition-all duration-300 ${mode === 'signup' ? 'bg-[#F4CE14] text-[#2A2D36]' : 'text-gray-400'}`}>Sign Up</button>
+                <button onClick={() => { setMode('login'); setError(null); }} className={`flex-1 py-3 rounded-xl font-bold text-sm transition-all duration-300 ${mode === 'login' ? 'bg-[#F4CE14] text-[#2A2D36]' : 'text-gray-400'}`}>Log In</button>
+            </div>
+        )}
 
         <h2 className="text-2xl font-bold mb-2 text-center">
-            {isLogin ? 'Welcome Back!' : 'Create an Account'}
+            {mode === 'login' && 'Welcome Back!'}
+            {mode === 'signup' && 'Create an Account'}
+            {mode === 'verify' && 'Check your Email'}
         </h2>
         <p className="text-gray-400 text-center mb-8 text-sm">
-            {isLogin ? 'Please sign in to continue' : 'Sign up to get started with us'}
+            {mode === 'login' && 'Please sign in to continue'}
+            {mode === 'signup' && 'Sign up to get started with us'}
+            {mode === 'verify' && `We sent a code to ${formData.email}`}
         </p>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4 mb-8">
-            {!isLogin && (
-                <input 
-                    type="text" 
-                    name="username"
-                    value={formData.username}
-                    placeholder="Username" 
-                    onChange={handleChange}
-                    className="bg-[#1F2128] border border-white/10 p-4 rounded-xl text-white outline-none focus:border-[#F4CE14] transition"
-                />
+            {mode !== 'verify' && (
+                <>
+                    {mode === 'signup' && (
+                        <input type="text" name="username" placeholder="Username" onChange={handleChange} value={formData.username} className="bg-[#1F2128] border border-white/10 p-4 rounded-xl text-white outline-none focus:border-[#F4CE14] transition"/>
+                    )}
+                    {/* Поле Email используется и для Username при входе */}
+                    <input type="text" name="email" placeholder={mode === 'login' ? "Email or Username" : "Email"} onChange={handleChange} value={formData.email} className="bg-[#1F2128] border border-white/10 p-4 rounded-xl text-white outline-none focus:border-[#F4CE14] transition"/>
+                    <input type="password" name="password" placeholder="Password" onChange={handleChange} value={formData.password} className="bg-[#1F2128] border border-white/10 p-4 rounded-xl text-white outline-none focus:border-[#F4CE14] transition"/>
+                </>
             )}
 
-            <input 
-                type="text" 
-                name="email"
-                value={formData.email}
-                placeholder={isLogin ? "Email or Username" : "Email"} 
-                onChange={handleChange}
-                className="bg-[#1F2128] border border-white/10 p-4 rounded-xl text-white outline-none focus:border-[#F4CE14] transition"
-            />
-            
-            <input 
-                type="password" 
-                name="password"
-                value={formData.password}
-                placeholder="Password" 
-                onChange={handleChange}
-                className="bg-[#1F2128] border border-white/10 p-4 rounded-xl text-white outline-none focus:border-[#F4CE14] transition"
-            />
-
-            {error && (
-                <div className="bg-red-500/10 border border-red-500/50 p-3 rounded-lg text-red-400 text-sm text-center animate-pulse">
-                    {error} 
-                </div>
+            {mode === 'verify' && (
+                <>
+                    <input 
+                        type="text" 
+                        placeholder="Enter Verification Key" 
+                        onChange={(e) => setVerifyKey(e.target.value)} 
+                        className="bg-[#1F2128] border border-[#F4CE14] p-4 rounded-xl text-white text-center text-lg tracking-widest outline-none transition"
+                    />
+                    
+                    <button 
+                        type="button" 
+                        onClick={handleResend} 
+                        disabled={resendTimer > 0}
+                        className={`w-full py-3 rounded-xl font-bold text-sm transition-all duration-300 flex items-center justify-center gap-2 ${resendTimer > 0 ? 'bg-[#2A2D36] border border-white/10 text-gray-500 cursor-not-allowed opacity-50' : 'bg-[#2A2D36] border border-[#F4CE14] text-[#F4CE14] hover:bg-[#F4CE14] hover:text-[#2A2D36] cursor-pointer shadow-lg'}`}
+                    >
+                        {resendTimer > 0 ? `Wait ${resendTimer}s to resend` : 'Resend Email'}
+                    </button>
+                </>
             )}
 
-            <button type="submit" className="bg-[#F4CE14] text-[#2A2D36] font-bold py-4 rounded-xl mt-2 hover:bg-[#E5C00E] transition shadow-[0_4px_14px_0_rgba(244,206,20,0.39)] cursor-pointer active:scale-[0.98]">
-                {isLogin ? 'Log In' : 'Create Account'}
+            {error && <div className="bg-red-500/10 border border-red-500/50 p-3 rounded-lg text-red-400 text-sm text-center">{error}</div>}
+            {message && <div className="bg-green-500/10 border border-green-500/50 p-3 rounded-lg text-green-400 text-sm text-center">{message}</div>}
+
+            <button type="submit" disabled={loading} className="bg-[#F4CE14] text-[#2A2D36] font-bold py-4 rounded-xl mt-2 hover:bg-[#E5C00E] transition shadow-[0_4px_14px_0_rgba(244,206,20,0.39)] cursor-pointer active:scale-[0.98]">
+                {loading ? 'Processing...' : (mode === 'verify' ? 'Verify & Login' : (mode === 'login' ? 'Log In' : 'Create Account'))}
             </button>
         </form>
 
-        <div className="relative mb-8">
-            <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-white/10"></div></div>
-            <div className="relative flex justify-center text-sm"><span className="px-2 bg-[#2A2D36] text-gray-500">Or continue with</span></div>
-        </div>
-
-        <div className="flex flex-col gap-2">
-            <SocialButton text="Google" icon={faGoogle} />
-            <SocialButton text="Microsoft" icon={faMicrosoft} />
-            <SocialButton text="Facebook" icon={faFacebookF} />
-        </div>
-
-        <p className="text-center mt-8 text-gray-400 text-sm">
-            {isLogin ? "Don't have an account? " : "Already have an account? "}
-            <span 
-                className="text-[#F4CE14] font-bold cursor-pointer hover:underline"
-                onClick={() => toggleMode(isLogin ? 'signup' : 'login')}
-            >
-                {isLogin ? 'Sign up' : 'Log in'}
-            </span>
-        </p>
-
+        {mode !== 'verify' && (
+            <div className="flex flex-col gap-2">
+                 <SocialButton text="Google" icon={faGoogle} />
+                 <SocialButton text="Microsoft" icon={faMicrosoft} />
+                 <SocialButton text="Facebook" icon={faFacebookF} />
+            </div>
+        )}
       </div>
     </div>
   );
