@@ -11,10 +11,16 @@ import {
 } from '@fortawesome/free-brands-svg-icons';
 
 const Auth = () => {
-  const [isLogin, setIsLogin] = useState(true);
+  const [isLogin, setIsLogin] = useState(false); 
   const [formData, setFormData] = useState({ email: '', username: '', password: '' });
   const [error, setError] = useState(null);
   const navigate = useNavigate();
+
+  const toggleMode = (mode) => {
+    setIsLogin(mode === 'login');
+    setError(null);
+    setFormData({ email: '', username: '', password: '' });
+  };
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -33,7 +39,6 @@ const Auth = () => {
         let payload = {};
 
         if (isLogin) {
-            // ЛОГИКА ВХОДА
             if (formData.email.includes('@')) {
                 payload = {
                     email: formData.email,
@@ -41,12 +46,11 @@ const Auth = () => {
                 };
             } else {
                 payload = {
-                    username: formData.email, 
+                    username: formData.email,
                     password: formData.password,
                 };
             }
         } else {
-            // ЛОГИКА РЕГИСТРАЦИИ
             payload = { 
                 username: formData.username, 
                 email: formData.email, 
@@ -73,12 +77,9 @@ const Auth = () => {
             } else {
                 if (data.username) setError(`Username: ${data.username[0]}`);
                 else if (data.email) setError(`Email: ${data.email[0]}`);
-                
-                // Проверяем все варианты имени поля пароля
                 else if (data.password) setError(`Password: ${data.password[0]}`);
                 else if (data.password1) setError(`Password: ${data.password1[0]}`);
                 else if (data.password2) setError(`Password: ${data.password2[0]}`);
-                
                 else {
                     const firstKey = Object.keys(data)[0];
                     const firstVal = data[firstKey];
@@ -112,26 +113,45 @@ const Auth = () => {
     <div className="min-h-screen bg-[#1F2128] flex items-center justify-center p-4 font-sans text-white">
       <div className="w-full max-w-md bg-[#2A2D36] p-8 rounded-[30px] shadow-2xl border border-white/5">
         
-        <h2 className="text-3xl font-bold mb-2 text-center">
-            {isLogin ? 'Welcome back' : 'Create account'}
+        {/* --- ПЕРЕКЛЮЧАТЕЛЬ РЕЖИМОВ --- */}
+        <div className="flex bg-[#1F2128] p-1 rounded-xl mb-8">
+            <button
+                type="button"
+                onClick={() => toggleMode('signup')}
+                className={`flex-1 py-3 rounded-xl font-bold text-sm transition-all duration-300 ${
+                    !isLogin 
+                        ? 'bg-[#F4CE14] text-[#2A2D36] shadow-md' 
+                        : 'text-gray-400 hover:text-white'
+                }`}
+            >
+                Sign Up
+            </button>
+            <button
+                type="button"
+                onClick={() => toggleMode('login')}
+                className={`flex-1 py-3 rounded-xl font-bold text-sm transition-all duration-300 ${
+                    isLogin 
+                        ? 'bg-[#F4CE14] text-[#2A2D36] shadow-md' 
+                        : 'text-gray-400 hover:text-white'
+                }`}
+            >
+                Log In
+            </button>
+        </div>
+
+        <h2 className="text-2xl font-bold mb-2 text-center">
+            {isLogin ? 'Welcome Back!' : 'Create an Account'}
         </h2>
-        <p className="text-gray-400 text-center mb-8">
-            {isLogin ? 'Enter your details to sign in' : 'Sign up to get started'}
+        <p className="text-gray-400 text-center mb-8 text-sm">
+            {isLogin ? 'Please sign in to continue' : 'Sign up to get started with us'}
         </p>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4 mb-8">
-            <input 
-                type="text" 
-                name="email"
-                placeholder={isLogin ? "Email or Username" : "Email"} 
-                onChange={handleChange}
-                className="bg-[#1F2128] border border-white/10 p-4 rounded-xl text-white outline-none focus:border-[#F4CE14] transition"
-            />
-            
             {!isLogin && (
                 <input 
                     type="text" 
                     name="username"
+                    value={formData.username}
                     placeholder="Username" 
                     onChange={handleChange}
                     className="bg-[#1F2128] border border-white/10 p-4 rounded-xl text-white outline-none focus:border-[#F4CE14] transition"
@@ -139,21 +159,31 @@ const Auth = () => {
             )}
 
             <input 
+                type="text" 
+                name="email"
+                value={formData.email}
+                placeholder={isLogin ? "Email or Username" : "Email"} 
+                onChange={handleChange}
+                className="bg-[#1F2128] border border-white/10 p-4 rounded-xl text-white outline-none focus:border-[#F4CE14] transition"
+            />
+            
+            <input 
                 type="password" 
                 name="password"
+                value={formData.password}
                 placeholder="Password" 
                 onChange={handleChange}
                 className="bg-[#1F2128] border border-white/10 p-4 rounded-xl text-white outline-none focus:border-[#F4CE14] transition"
             />
 
             {error && (
-                <div className="bg-red-500/10 border border-red-500/50 p-3 rounded-lg text-red-400 text-sm text-center">
+                <div className="bg-red-500/10 border border-red-500/50 p-3 rounded-lg text-red-400 text-sm text-center animate-pulse">
                     {error} 
                 </div>
             )}
 
-            <button type="submit" className="bg-[#F4CE14] text-black font-bold py-4 rounded-xl mt-2 hover:bg-[#E5C00E] transition shadow-[0_4px_14px_0_rgba(244,206,20,0.39)] cursor-pointer">
-                {isLogin ? 'Sign In' : 'Sign Up'}
+            <button type="submit" className="bg-[#F4CE14] text-[#2A2D36] font-bold py-4 rounded-xl mt-2 hover:bg-[#E5C00E] transition shadow-[0_4px_14px_0_rgba(244,206,20,0.39)] cursor-pointer active:scale-[0.98]">
+                {isLogin ? 'Log In' : 'Create Account'}
             </button>
         </form>
 
@@ -164,23 +194,16 @@ const Auth = () => {
 
         <div className="flex flex-col gap-2">
             <SocialButton text="Google" icon={faGoogle} />
+            {/* ВЕРНУЛИ КНОПКИ */}
             <SocialButton text="Microsoft" icon={faMicrosoft} />
             <SocialButton text="Facebook" icon={faFacebookF} />
-            <div className="flex gap-3">
-                <div className="w-1/2">
-                    <SocialButton text="Telegram" icon={faTelegram} halfWidth={true} />
-                </div>
-                <div className="w-1/2">
-                    <SocialButton text="VK" icon={faVk} halfWidth={true} />
-                </div>
-            </div>
         </div>
 
-        <p className="text-center mt-8 text-gray-400">
+        <p className="text-center mt-8 text-gray-400 text-sm">
             {isLogin ? "Don't have an account? " : "Already have an account? "}
             <span 
-                className="text-[#BFAFF2] font-bold cursor-pointer hover:underline"
-                onClick={() => { setIsLogin(!isLogin); setError(null); }}
+                className="text-[#F4CE14] font-bold cursor-pointer hover:underline"
+                onClick={() => toggleMode(isLogin ? 'signup' : 'login')}
             >
                 {isLogin ? 'Sign up' : 'Log in'}
             </span>

@@ -11,7 +11,10 @@ const HeroDashboard = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    axios.get('http://127.0.0.1:8000/api/stats/')
+    const token = localStorage.getItem('token');
+    const headers = token ? { 'Authorization': `Token ${token}` } : {};
+
+    axios.get('http://127.0.0.1:8000/api/stats/', { headers })
       .then(res => {
         setStats(res.data);
         setLoading(false);
@@ -22,11 +25,17 @@ const HeroDashboard = () => {
       });
   }, []);
 
-  // Цвета для Customer Rate (строго в порядке данных с бэка: 5 звезд, 4, 3, 2)
-  // 5 Stars -> Green, 4 -> Blue, 3 -> Yellow, 2 -> Red
-  const PIE_COLORS = ['#4ADE80', '#3B82F6', '#F4CE14', '#EF4444']; 
+  // --- ИЗМЕНЕННЫЕ ЦВЕТА ---
+  // Порядок данных: 5 звезд, 4 звезды, 3 звезды, 2 звезды
+  // Было: Green, Blue, Yellow, Red
+  // Стало: Green, Yellow, Orange, Red
+  const PIE_COLORS = [
+    '#4ADE80', // 5 Stars (Green)
+    '#F4CE14', // 4 Stars (Yellow - наш фирменный)
+    '#F97316', // 3 Stars (Orange)
+    '#EF4444'  // 2 Stars (Red)
+  ]; 
 
-  // Тултип без слова "Value"
   const CustomTooltip = ({ active, payload, label, prefix = "", suffix = "" }) => {
     if (active && payload && payload.length) {
       return (
@@ -34,7 +43,6 @@ const HeroDashboard = () => {
           <p className="text-white font-bold">
             {prefix}{payload[0].value.toLocaleString()}{suffix}
           </p>
-          {/* Если есть label (например дата), покажем его мелко */}
           {label && <p className="text-gray-400 mt-1">{label}</p>}
         </div>
       );
@@ -43,6 +51,7 @@ const HeroDashboard = () => {
   };
 
   if (loading) return <div className="w-full h-full bg-[#2A2D36] animate-pulse rounded-2xl"></div>;
+  if (!stats) return null;
 
   return (
     <div className="w-full h-full grid grid-cols-1 md:grid-cols-2 gap-4 font-sans">
@@ -58,8 +67,8 @@ const HeroDashboard = () => {
                 <PieChart>
                     <Pie
                         data={stats.customer_rate}
-                        innerRadius={45}
-                        outerRadius={58}
+                        innerRadius={40} 
+                        outerRadius={60}
                         paddingAngle={2}
                         dataKey="value"
                         stroke="none"
@@ -72,21 +81,8 @@ const HeroDashboard = () => {
                 </PieChart>
             </ResponsiveContainer>
             
-            {/* Текст внутри бублика (Сумма или среднее, но можно просто декоративный процент) */}
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                  <span className="text-white font-bold text-xl">4.8</span>
-            </div>
-            
-            {/* Динамические цифры по углам (берем из stats) */}
-            <div className="absolute inset-0 pointer-events-none text-[10px] font-bold opacity-80">
-                 {/* 5 звезд (Зеленый) */}
-                 <div className="text-green-400 absolute top-0 right-4">{stats.customer_rate[0].value}</div>
-                 {/* 4 звезды (Синий) */}
-                 <div className="text-blue-400 absolute bottom-4 right-0">{stats.customer_rate[1].value}</div>
-                 {/* 3 звезды (Желтый) */}
-                 <div className="text-yellow-400 absolute bottom-0 left-4">{stats.customer_rate[2].value}</div>
-                 {/* 2 звезды (Красный) */}
-                 <div className="text-red-400 absolute top-4 left-0">{stats.customer_rate[3].value}</div>
             </div>
         </div>
       </div>
@@ -102,11 +98,11 @@ const HeroDashboard = () => {
                         content={<CustomTooltip />} 
                     />
                     <Line 
-                        type="monotone" // Максимальная плавность
+                        type="monotone" 
                         dataKey="value" 
                         stroke="#F4CE14" 
                         strokeWidth={3} 
-                        dot={{r: 3, fill: '#F4CE14', strokeWidth: 0}} // Маленькие аккуратные точки
+                        dot={{r: 3, fill: '#F4CE14', strokeWidth: 0}} 
                         activeDot={{r: 6, stroke: '#fff', strokeWidth: 2}}
                     />
                     <XAxis 
@@ -122,13 +118,12 @@ const HeroDashboard = () => {
         </div>
       </div>
 
-      {/* 3. Weekly Plan (Area Chart - Сбор средств) */}
+      {/* 3. Weekly Plan (Area Chart) */}
       <div className="md:col-span-2 bg-[#2A2D36] p-5 rounded-2xl min-h-[220px] flex flex-col">
         <div className="flex justify-between items-end mb-4 border-b border-gray-700 pb-2">
             <h4 className="text-sm font-medium text-white border-b border-yellow-500/50 inline-block pb-1">Weekly plan</h4>
-            {/* Показываем последнюю (текущую) сумму */}
             <span className="text-green-400 font-bold text-lg">
-                ${stats.weekly_plan[stats.weekly_plan.length - 1].value.toLocaleString()}
+                ${stats.weekly_plan.length > 0 ? stats.weekly_plan[stats.weekly_plan.length - 1].value.toLocaleString() : 0}
             </span>
         </div>
         

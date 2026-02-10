@@ -30,7 +30,7 @@ const Footer = () => {
             <p className="text-text-muted text-lg md:text-xl mb-10 max-w-md leading-relaxed">
                 Contact us through our 24/7 live chat. We're always happy to help!
             </p>
-            <button className="bg-accent-yellow text-bg-dark px-10 py-4 rounded-xl font-bold text-xl hover:bg-[#E5C00E] transition cursor-pointer shadow-lg shadow-yellow-500/20">
+            <button className="bg-[#F4CE14] text-[#1F2128] px-10 py-4 rounded-xl font-bold text-xl hover:bg-[#E5C00E] transition cursor-pointer shadow-[0_10px_20px_-5px_rgba(244,206,20,0.3)]">
                 Get started
             </button>
          </div>
@@ -45,13 +45,11 @@ const Footer = () => {
       </div>
 
       {/* Нижняя полоса */}
-      {/* Изменено: pb-10 -> pb-24, чтобы поднять контент выше */}
       <div className="flex flex-col md:flex-row justify-between items-end pt-20 pb-24 border-t border-white/10 gap-10 max-w-[1440px] mx-auto">
         
         {/* Лого и ссылки */}
         <div className="flex flex-col gap-8 w-full md:w-auto">
             
-            {/* Логотип (текстом, как договаривались) */}
             <a href="/" className="text-2xl font-bold text-white tracking-wide hover:text-gray-300 transition cursor-pointer font-sans">
                 Wallet
             </a>
@@ -64,7 +62,7 @@ const Footer = () => {
             </div>
         </div>
 
-        {/* Форма подписки (без изменений) */}
+        {/* Форма подписки */}
         <div className="w-full md:w-auto flex flex-col items-start md:items-end">
              <p className="text-base text-text-muted mb-4 font-medium">Updates right to your Inbox</p>
              <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-4 w-full">
@@ -73,13 +71,15 @@ const Footer = () => {
                     placeholder="Email Address" 
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="bg-[#2A2D36] text-white px-6 py-4 rounded-xl outline-none border border-transparent focus:border-accent-purple text-lg w-full sm:w-80 placeholder-gray-500 transition-all"
+                    // Исправлен focus:border на желтый
+                    className="bg-[#2A2D36] text-white px-6 py-4 rounded-xl outline-none border border-transparent focus:border-[#F4CE14] text-lg w-full sm:w-80 placeholder-gray-500 transition-all"
                 />
-                <button type="submit" className="bg-accent-purple text-bg-dark px-10 py-4 rounded-xl font-bold text-lg hover:bg-[#A995ED] transition cursor-pointer whitespace-nowrap">
+                {/* Кнопка Send теперь желтая */}
+                <button type="submit" className="bg-[#F4CE14] text-[#1F2128] px-10 py-4 rounded-xl font-bold text-lg hover:bg-[#E5C00E] transition cursor-pointer whitespace-nowrap shadow-[0_10px_20px_-5px_rgba(244,206,20,0.3)]">
                     Send
                 </button>
              </form>
-             {status && <p className="text-sm text-accent-yellow mt-2 font-medium">{status}</p>}
+             {status && <p className="text-sm text-[#F4CE14] mt-2 font-medium">{status}</p>}
         </div>
 
       </div>
