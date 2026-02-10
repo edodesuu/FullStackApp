@@ -23,13 +23,19 @@ const Navbar = () => {
       <div className="flex items-center gap-8">
         {token ? (
             // --- ЕСЛИ ЗАЛОГИНЕН ---
-            <div className="flex items-center gap-4">
+            // Увеличили gap с 4 до 10, чтобы элементы "дышали"
+            <div className="flex items-center gap-10">
                 <span className="text-white font-bold text-lg">
                     Hi, <span className="text-[#F4CE14]">{username || 'User'}</span>
                 </span>
+                
+                {/* Кнопка Logout: 
+                    1. Убрал text-sm, поставил text-base (покрупнее).
+                    2. Добавил border и padding, чтобы кнопка имела свои границы и выглядела стильно.
+                */}
                 <button 
                     onClick={handleLogout}
-                    className="text-sm font-medium text-white/60 hover:text-red-400 transition cursor-pointer"
+                    className="text-base font-medium text-gray-400 hover:text-white transition cursor-pointer border border-white/10 px-5 py-2 rounded-xl hover:border-red-400/50 hover:bg-red-500/10"
                 >
                     Logout
                 </button>
