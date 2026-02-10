@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react'; // Добавил useEffect на всякий случай
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom'; // Добавил useLocation
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faGoogle, 
@@ -11,10 +11,26 @@ import {
 } from '@fortawesome/free-brands-svg-icons';
 
 const Auth = () => {
-  const [isLogin, setIsLogin] = useState(false); 
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Инициализируем состояние в зависимости от того, что пришло из Navbar
+  // Если location.state.mode === 'login', то true (Вход). Иначе false (Регистрация).
+  const [isLogin, setIsLogin] = useState(location.state?.mode === 'login');
+  
   const [formData, setFormData] = useState({ email: '', username: '', password: '' });
   const [error, setError] = useState(null);
-  const navigate = useNavigate();
+
+  // Дополнительно: Если пользователь нажимает кнопки в навбаре, уже находясь на странице /login,
+  // нам нужно обновлять состояние (React не пересоздает компонент, если маршрут тот же).
+  useEffect(() => {
+    if (location.state?.mode) {
+        setIsLogin(location.state.mode === 'login');
+        setError(null); // Сбрасываем ошибки при переключении
+        setFormData({ email: '', username: '', password: '' }); // Очищаем форму
+    }
+  }, [location.state]);
+
 
   const toggleMode = (mode) => {
     setIsLogin(mode === 'login');
@@ -194,7 +210,6 @@ const Auth = () => {
 
         <div className="flex flex-col gap-2">
             <SocialButton text="Google" icon={faGoogle} />
-            {/* ВЕРНУЛИ КНОПКИ */}
             <SocialButton text="Microsoft" icon={faMicrosoft} />
             <SocialButton text="Facebook" icon={faFacebookF} />
         </div>

@@ -13,17 +13,17 @@ const Navbar = () => {
       </a>
       
       <div className="flex items-center gap-8">
-        {/* Log In теперь просто текст-ссылка */}
+        {/* Кнопка Log In -> Передает state: 'login' */}
         <button 
-            onClick={() => navigate('/login')}
+            onClick={() => navigate('/login', { state: { mode: 'login' } })}
             className="text-sm font-medium text-white hover:text-white/80 transition cursor-pointer"
         >
             Log In
         </button>
 
-        {/* Sign Up теперь акцентная желтая кнопка */}
+        {/* Кнопка Sign Up -> Передает state: 'signup' */}
         <button 
-            onClick={() => navigate('/login')}
+            onClick={() => navigate('/login', { state: { mode: 'signup' } })}
             className="bg-[#F4CE14] text-[#1F2128] px-6 py-2.5 rounded-xl font-bold hover:bg-[#E5C00E] transition shadow-[0_4px_14px_0_rgba(244,206,20,0.39)] cursor-pointer"
         >
             Sign Up
