@@ -24,11 +24,11 @@ const Hero = () => {
         
         <div className="w-full lg:w-1/2 flex flex-col items-center lg:items-start text-center lg:text-left z-10">
           <h1 className="text-5xl md:text-7xl font-bold leading-tight mb-6">
-            SaaS Landing <br /> Page Template
+            Wallet <br /> Finances Manager
           </h1>
           <p className="text-text-muted text-lg mb-8 max-w-lg">
-            This is a template Figma file, turned into code using Anima. 
-            Learn more at AnimaApp.com
+            Wallet is modern, stylish, practical finances manager.
+            It calculates incomes and expanses, making it easy to control budgeting.
           </p>
           <button 
             onClick={handleMainAction}
