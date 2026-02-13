@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from dj_rest_auth.registration.serializers import RegisterSerializer
+from dj_rest_auth.serializers import UserDetailsSerializer
 from django.contrib.auth import get_user_model
 from allauth.account.models import EmailAddress
 
@@ -52,3 +53,16 @@ class CustomRegisterSerializer(RegisterSerializer):
             user.save()
             
         return user
+    
+
+class CustomUserSerializer(UserDetailsSerializer):
+    class Meta(UserDetailsSerializer.Meta):
+        model = User
+        fields = ('id', 'username', 'email', 'first_name', 'last_name')
+        read_only_fields = ('email',)
+
+    def validate_username(self, username):
+        user = self.context['request'].user
+        if User.objects.exclude(pk=user.pk).filter(username=username).exists():
+            raise serializers.ValidationError("A user with that username already exists.")
+        return username

@@ -23,7 +23,7 @@ const FeaturesGrid = () => {
     <section className="py-24 px-6 md:px-10 max-w-[1200px] mx-auto font-sans">
       
       {/* 3 Колонки с картинками */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-12 text-center mb-24">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-12 text-center mb-16 md:mb-24">
         {features.map((f, i) => (
             <div key={i} className="flex flex-col items-center">
                 <div className="mb-6">
@@ -40,9 +40,9 @@ const FeaturesGrid = () => {
       </div>
 
       {/* Testimonial Блок - ТЕПЕРЬ ЖЕЛТЫЙ */}
-      <div className="bg-[#F4CE14] text-[#1F2128] rounded-[40px] p-12 md:p-24 text-center shadow-[0_20px_40px_-10px_rgba(244,206,20,0.3)]">
-        <h3 className="text-3xl md:text-5xl font-bold leading-tight mb-16 max-w-5xl mx-auto">
-            “Wallet is a great product! All of my most important information is there - credit cards, transit cards, boarding passes, tickets, and more. And I don't need to worry because it's all in one place! thanks!”
+      <div className="bg-[#F4CE14] text-[#1F2128] rounded-[30px] md:rounded-[40px] p-8 md:p-24 text-center shadow-[0_20px_40px_-10px_rgba(244,206,20,0.3)]">
+        <h3 className="text-2xl md:text-4xl lg:text-5xl font-bold leading-tight mb-8 md:mb-16 max-w-5xl mx-auto">
+          “Wallet is a great product! All of my most important information is there - credit cards, transit cards, boarding passes, tickets, and more. And I don't need to worry because it's all in one place! thanks!”
         </h3>
         
         <div className="flex items-center justify-center gap-5">

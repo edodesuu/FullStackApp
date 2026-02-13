@@ -97,6 +97,7 @@ REST_AUTH = {
     'JWT_AUTH_COOKIE': 'wallet-auth',
     'JWT_AUTH_REFRESH_COOKIE': 'wallet-refresh-token',
     'REGISTER_SERIALIZER': 'landing.serializers.CustomRegisterSerializer',
+    'USER_DETAILS_SERIALIZER': 'landing.serializers.CustomUserSerializer',
 }
 
 SIMPLE_JWT = {
@@ -110,7 +111,7 @@ EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'edodesuu@gmail.com'
-EMAIL_HOST_PASSWORD = 'xxxxxxxxxxxxxxxx' 
+EMAIL_HOST_PASSWORD = 'lpupunjlzypqovdv' 
 DEFAULT_FROM_EMAIL = 'Wallet App <edodesuu@gmail.com>'
 
 # --- ALLAUTH CONFIGURATION ---
